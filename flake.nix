@@ -3,13 +3,9 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    wlroots-0_17 = {
-      url = "gitlab:freedesktop/wlroots?ref=0.17.4";
-      flake = false;
-    };
   };
 
-  outputs = { self, nixpkgs, wlroots-0_17, ... }@inputs:
+  outputs = { self, nixpkgs, ... }@inputs:
   let
     system = "x86_64-linux";
     pkgs = import nixpkgs {
@@ -18,23 +14,9 @@
     };
   in {
     overlays.default = final: prev: {
-      wlroots-0_17 = prev.callPackage ({ mkDerivation, meson, ninja, pkg-config
-        , wayland, wayland-protocols, libinput, libxkbcommon, pixman
-        , libdrm, xorg, vulkan-headers, vulkan-loader
-      }: mkDerivation {
-        pname = "wlroots";
-        version = "0.17.4";
-        src = inputs.wlroots-0_17;
-        nativeBuildInputs = [ meson ninja pkg-config ];
-        buildInputs = [
-          wayland wayland-protocols libinput libxkbcommon pixman
-          libdrm xorg.libX11 vulkan-headers vulkan-loader
-        ];
-        mesonFlags = [ "-Dexamples=false" ];
-      }) {};
-
+      # 直接复用nixpkgs中的wlroots_0_17
       maomaowm = prev.callPackage ({ mkDerivation, meson, ninja, pkg-config
-        , wayland, wayland-protocols, wlroots-0_17, libinput, libxkbcommon
+        , wayland, wayland-protocols, wlroots_0_17, libinput, libxkbcommon
         , pixman, json-c, scdoc
       }: mkDerivation {
         pname = "maomaowm";
@@ -42,8 +24,13 @@
         src = ./.;
         nativeBuildInputs = [ meson ninja pkg-config scdoc ];
         buildInputs = [
-          wayland wayland-protocols wlroots-0_17 libinput
-          libxkbcommon pixman json-c
+          wayland 
+          wayland-protocols 
+          wlroots_0_17 
+          libinput
+          libxkbcommon 
+          pixman 
+          json-c
         ];
         mesonFlags = [ "--prefix=${placeholder "out"}" ];
       }) {};
@@ -53,50 +40,25 @@
     with lib;
     let cfg = config.services.maomaowm;
     in {
-      options.services.maomaowm = {
-        enable = mkEnableOption "maomaowm wayland compositor";
-        package = mkOption {
-          type = types.package;
-          default = pkgs.maomaowm;
-          defaultText = "pkgs.maomaowm";
-          description = "maomaowm package to use";
-        };
-        configFile = mkOption {
-          type = types.nullOr types.path;
-          default = null;
-          description = "Path to configuration file";
-        };
-        autostartScript = mkOption {
-          type = types.nullOr types.path;
-          default = null;
-          description = "Path to autostart script";
-        };
+      options.services.maomaowm.enable = mkEnableOption "maomaowm compositor" // {
+        default = true;
       };
 
       config = mkIf cfg.enable {
-        environment.systemPackages = [ cfg.package ];
+        environment.systemPackages = [ pkgs.maomaowm ];
         
         systemd.user.services.maomaowm = {
           description = "Maomao Wayland Compositor";
           wantedBy = [ "graphical-session.target" ];
           serviceConfig = {
-            ExecStart = "${cfg.package}/bin/maomao";
+            ExecStart = "${pkgs.maomaowm}/bin/maomao";
             Restart = "on-failure";
-            Environment = [
-              "XDG_CONFIG_HOME=${if cfg.configFile != null then dirOf cfg.configFile else "$HOME/.config"}"
-              "PATH=${pkgs.rofi}/bin:${pkgs.foot}/bin:${pkgs.waybar}/bin"
-            ];
           };
         };
 
-        environment.etc = mkMerge [
-          (mkIf (cfg.configFile != null) {
-            "maomao/config.conf".source = cfg.configFile;
-          })
-          (mkIf (cfg.autostartScript != null) {
-            "maomao/autostart.sh".source = cfg.autostartScript;
-          })
-        ];
+        # 提供空配置文件模板到/etc
+        environment.etc."maomao/config.conf.example".text = "";
+        environment.etc."maomao/autostart.sh.example".text = "";
       };
     };
 
