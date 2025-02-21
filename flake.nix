@@ -45,7 +45,7 @@
       };
 
       config = mkIf cfg.enable {
-        environment.systemPackages = [ pkgs.maomaowm ];
+        environment.systemPackages = [ self.packages.${system}.maomaowm ];
         
         systemd.user.services.maomaowm = {
           description = "Maomao Wayland Compositor";
