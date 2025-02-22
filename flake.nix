@@ -4,9 +4,10 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+    maomaowm.url = "path:./";
   };
 
-  outputs = { self, nixpkgs, flake-utils, lib,  ... }:let
+  outputs = { self, nixpkgs, flake-utils, maomaowm, ... }: let
     systems = ["x86_64-linux"
     "aarch64-linux"];
     forEachSystem = nixpkgs.lib.genAttrs systems;
@@ -18,26 +19,26 @@
       {
         overlay = final: prev: {
           
-        maomaowm = pkgs.stdenv.mkDerivation rec {
-          pname = "maomaowm";
-          version = "0.1.4";
+          maomaowm = pkgs.stdenv.mkDerivation rec {
+            pname = "maomaowm";
+            version = "0.1.4";
         
-          src = "./.";
+            src = ./.;
 
             # 修改配置目录
-  postPatch = ''
-    substituteInPlace meson.build \
-      --replace "run_command('sh', '-c', 'echo \$HOME', check: true).stdout().strip()" \
+            postPatch = ''
+            substituteInPlace meson.build \
+              --replace "run_command('sh', '-c', 'echo \$HOME', check: true).stdout().strip()" \
                 "meson.current_build_dir()" \
-      --replace ".config/maomao" \
+                --replace ".config/maomao" \
                 "config"
-  '';
+            '';
 
-  # 添加安装后的处理
-  postInstall = ''
-    mkdir -p $out/etc/maomao
-    cp -r $TMPDIR/build/config/* $out/etc/maomao/ || true
-  '';
+            # 添加安装后的处理
+            postInstall = ''
+            mkdir -p $out/etc/maomao
+            cp -r $TMPDIR/build/config/* $out/etc/maomao/ || true
+            '';
         
           nativeBuildInputs = with pkgs; [
             meson
