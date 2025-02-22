@@ -65,6 +65,10 @@
         };
       }
     ) // {
+      # 全局覆盖层导出（确保可直接访问）
+      overlays = {
+        default = self.overlays.maomao;
+      };
       # 导出NixOS配置
       nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
