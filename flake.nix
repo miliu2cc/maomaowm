@@ -16,9 +16,9 @@
         pkgs = nixpkgs.legacyPackages.${system};
       in
       {
-        overlay = final: prev: {
+
           
-          maomaowm = pkgs.stdenv.mkDerivation rec {
+          packages.default = pkgs.stdenv.mkDerivation rec {
             pname = "maomaowm";
             version = "0.1.4";
         
@@ -61,10 +61,23 @@
             xorg.libXcursor
             xwayland          
           ];
-        
         };
+        # 导出覆盖层
+        overlays.default = final: prev: {
+          maomaowm = self.packages.${system}.default;
         };
+
       }
-    );
+    ) // {
+        # 导出NixOS配置
+      nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        specialArgs = { inherit inputs; };
+        modules = [
+          ({ config, pkgs, ... }: {
+            nixpkgs.overlays = [ inputs.self.overlays.default ];
+          })
+          ];
+    };
   };
 }
