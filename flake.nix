@@ -65,9 +65,12 @@
         };
       }
     ) // {
-      # 全局覆盖层导出（确保可直接访问）
+      # 全局覆盖层导出（关键修复）
       overlays = {
-        default = self.overlays.maomao;
+        # 合并所有系统的覆盖层为全局默认覆盖层
+        default = final: prev: {
+          maomaowm = prev.callPackage ({ system, ... }: self.packages.${system}.default) {};
+        };
       };
     };
 }
