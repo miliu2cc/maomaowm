@@ -60,14 +60,14 @@
         };
 
         # 导出覆盖层
-        overlays.default = final: prev: {
+        overlays.maomao = final: prev: {
           maomaowm = self.packages.${system}.default;
         };
       }
     ) // {
       # 全局覆盖层导出（确保可直接访问）
       overlays = {
-        default = self.overlays.maomaowm;
+        default = self.overlays.maomao;
       };
       # 导出NixOS配置
       nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
