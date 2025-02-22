@@ -69,16 +69,5 @@
       overlays = {
         default = self.overlays.maomao;
       };
-      # 导出NixOS配置
-      nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        specialArgs = { inherit inputs; };
-        modules = [
-          ({ config, pkgs, ... }: {
-            nixpkgs.overlays = [ inputs.self.overlays.default ];
-          })
-          # 其他模块（如./nixos/configuration.nix）
-        ];
-      };
     };
 }
